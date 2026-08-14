@@ -1,23 +1,29 @@
 # X / Threads 自動運用ボット
 
-X（旧Twitter）とThreadsの運用を支援するツールキットです。現在は **Threads向けの軽量版（中学受験トレンド分析＋下書き生成）** を運用中で、X連携・自動投稿を含むフル自動運用の仕組みは一旦保留しています（後述）。
+X（旧Twitter）とThreadsの運用を支援するツールキットです。現在は **Threads / X 共通の軽量版（中学受験トレンド分析＋下書き生成）** を運用中で、自動投稿を含むフル自動運用の仕組みは一旦保留しています（後述）。
 
-## 今すぐ使える機能: Threadsトレンド下書き生成（中学受験）
+## 今すぐ使える機能: トレンド下書き生成（中学受験）
 
-「中学受験」に関する直近のトレンド・話題をWeb検索で調査し、インサイトを添えたThreads投稿文と推奨投稿日時の下書きを自動生成します。**自動投稿はせず、下書き出力までを行い、投稿は手動**で行う想定です。
+「中学受験」に関する直近のトレンド・話題をWeb検索で調査し、インサイトを添えた投稿文と推奨投稿日時の下書きを自動生成します。**自動投稿はせず、下書き出力までを行い、投稿は手動**で行う想定です。ThreadsとXそれぞれに専用のスクリプト・設定ファイル・出力先がありますが、ロジック本体（`socialbot/trend_drafts.py`）は共通です。
 
-- 実行スクリプト: `scripts/draft_threads_posts.py`
-- 定期実行ワークフロー: `.github/workflows/threads-trend-drafts.yml`（毎週火・金 07:00 JST + 手動実行）
-- 出力先: `drafts/threads/YYYY-MM-DD_HHMM.md`（レビュー用）と同名の `.json`（構造化データ）
-- 設定ファイル: `data/threads_juken_config.json`（トーン・ターゲット層・生成件数・ハッシュタグ）
-- 参考データ: `data/reference/` に `.md` / `.txt` を置くと、生成時に追加コンテキストとして読み込まれます（過去投稿の反応メモ、自社サイト情報など）
+| | Threads | X |
+| --- | --- | --- |
+| 実行スクリプト | `scripts/draft_threads_posts.py` | `scripts/draft_x_posts.py` |
+| 定期実行ワークフロー | `.github/workflows/threads-trend-drafts.yml`（毎週火・金 07:00 JST） | `.github/workflows/x-trend-drafts.yml`（毎週水・土 07:00 JST） |
+| 出力先 | `drafts/threads/YYYY-MM-DD_HHMM.md` / `.json` | `drafts/x/YYYY-MM-DD_HHMM.md` / `.json` |
+| 設定ファイル | `data/threads_juken_config.json` | `data/x_juken_config.json` |
+| 文字数上限 | 480字 | 260字（280字上限に余白） |
+
+- 参考データ: `data/reference/` に `.md` / `.txt` を置くと、**Threads・X両方の生成で共通して**読み込まれます（過去投稿の反応メモ、DMログ、投稿ルールなど）
+- ただし文面はプラットフォームごとに**毎回新規で作成**します。Threadsの投稿文をXに転用したり、その逆をしたりはしません（参考データは「保護者がどんな言葉に反応しやすいか」という関心の強さのシグナルとして使うのみ）
+- 定期実行の曜日はThreadsとXでずらしてあります（生成タイミングの分散のため。同時に実行しても問題はありません）
 
 ### 必要なもの
 
 - `ANTHROPIC_API_KEY`（Claude API。Web検索ツールを使ってトレンド調査を行うために必須）
-- Threads APIキーは **不要**（下書き生成のみのため）
+- X API / Threads APIキーは **不要**（下書き生成のみのため）
 
-GitHub Secretsに `ANTHROPIC_API_KEY` を登録すれば、`threads-trend-drafts.yml` のスケジュール実行または手動実行（Actionsタブ > workflow_dispatch）で下書きが `drafts/threads/` にコミットされます。生成された `.md` を確認し、内容に問題なければ手動でThreadsに投稿してください。
+GitHub Secretsに `ANTHROPIC_API_KEY` を登録すれば、各ワークフローのスケジュール実行または手動実行（Actionsタブ > workflow_dispatch）で下書きが `drafts/threads/` または `drafts/x/` にコミットされます。生成された `.md` を確認し、内容に問題なければ手動で投稿してください。
 
 ### ローカルでの動作確認
 
@@ -26,15 +32,15 @@ python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 export ANTHROPIC_API_KEY=sk-ant-...
 
-python scripts/draft_threads_posts.py
-# drafts/threads/ に .md と .json が生成される
+python scripts/draft_threads_posts.py   # drafts/threads/ に .md と .json が生成される
+python scripts/draft_x_posts.py         # drafts/x/ に .md と .json が生成される
 
 pytest  # ネットワーク接続不要のユニットテスト
 ```
 
 ### 項目の分け方について
 
-調査（トレンド分析）と文面生成は1回のAPI呼び出しの中でまとめて行っています。出力（Markdown/JSON）の中で候補トピックごとに項目を分けているので、パイプライン自体を分割しなくてもレビューはしやすい構成です。将来Xにも展開する場合は、`socialbot/threads_trend_drafts.py` と同様のモジュールをプラットフォームごとに追加する想定です。
+調査（トレンド分析）と文面生成は1回のAPI呼び出しの中でまとめて行っています。出力（Markdown/JSON）の中で候補トピックごとに項目を分けているので、パイプライン自体を分割しなくてもレビューはしやすい構成です。プラットフォームの違いは `socialbot/trend_drafts.py` 内の文字数上限・プロンプト文言の切り替えで吸収しており、スクリプト・設定ファイル・出力先だけをプラットフォームごとに分けています。
 
 ---
 
@@ -53,7 +59,7 @@ pytest  # ネットワーク接続不要のユニットテスト
 ```
 socialbot/
   config.py                    # 環境変数・パス設定
-  threads_trend_drafts.py       # [軽量版] トレンド調査＋下書き生成ロジック
+  trend_drafts.py               # [軽量版] トレンド調査＋下書き生成ロジック（Threads/X共通）
   queue.py                      # [保留中] 投稿キューの読み書き
   strategy.py                   # [保留中] 戦略ファイルの読み書き
   content_generator.py          # [保留中] 投稿文の自動生成
@@ -63,17 +69,21 @@ socialbot/
     threads.py                  # [保留中] Threads API クライアント（自動投稿用）
 scripts/
   draft_threads_posts.py        # [軽量版] Threads下書き生成CLI
+  draft_x_posts.py               # [軽量版] X下書き生成CLI
   generate_content.py           # [保留中] コンテンツ生成CLI
   publish_posts.py              # [保留中] 予約投稿の実行CLI
   analyze_insights.py           # [保留中] インサイト分析CLI
 data/
-  threads_juken_config.json     # [軽量版] トーン・ターゲット層等の設定
-  reference/                    # [軽量版] ユーザー提供の参考データ置き場
+  threads_juken_config.json     # [軽量版] Threads向けトーン・ターゲット層等の設定
+  x_juken_config.json            # [軽量版] X向けトーン・ターゲット層等の設定
+  reference/                    # [軽量版] ユーザー提供の参考データ置き場（Threads/X共通）
   strategy.json                 # [保留中] 運用戦略
   insights_history/             # [保留中] 分析結果のスナップショット
 content_queue/
   queue.json                    # [保留中] 投稿キュー
-drafts/threads/                 # [軽量版] 生成された下書き（.md / .json）
+drafts/
+  threads/                      # [軽量版] Threads向け生成済み下書き（.md / .json）
+  x/                             # [軽量版] X向け生成済み下書き（.md / .json）
 .github/workflows/               # GitHub Actions定期実行の定義
 tests/                           # pytestによるユニットテスト（ネットワーク非依存）
 ```
@@ -105,7 +115,7 @@ https://console.anthropic.com/ でAPIキーを発行し、`ANTHROPIC_API_KEY` �
 
 | Secret名 | 用途 | 現時点で必要か |
 | --- | --- | --- |
-| `ANTHROPIC_API_KEY` | Threads下書き生成（Web検索によるトレンド調査） | ✅ 必須 |
+| `ANTHROPIC_API_KEY` | Threads/X下書き生成（Web検索によるトレンド調査） | ✅ 必須 |
 | `X_API_KEY` / `X_API_SECRET` / `X_ACCESS_TOKEN` / `X_ACCESS_TOKEN_SECRET` | X自動投稿・指標取得（保留中） | 不要 |
 | `THREADS_ACCESS_TOKEN` / `THREADS_USER_ID` | Threads自動投稿・インサイト取得（保留中） | 不要 |
 
@@ -116,3 +126,4 @@ https://console.anthropic.com/ でAPIキーを発行し、`ANTHROPIC_API_KEY` �
 - 各プラットフォームの自動化・スパム防止ポリシーを順守してください
 - Threadsの長期アクセストークンは約60日で失効します（保留中機能を使う場合）
 - `data/reference/` に置いた参考データはリポジトリにコミットされるため、機密情報は含めないでください
+- Xについてはまだ実投稿の実績データがありません。`data/reference/` の内容は現状ほぼThreads実績のため、X向け下書きは「関心の強さの参考」程度に留め、実際に投稿して反応を見ながら育てていく想定です

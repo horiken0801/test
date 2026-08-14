@@ -11,7 +11,16 @@ from .config import Config
 
 JST = ZoneInfo("Asia/Tokyo")
 
-THREADS_MAX_CHARS = 480
+# Xの280字上限からURL等の余白を確保、Threadsは実質上限に近い値を使用
+PLATFORM_MAX_CHARS = {
+    "threads": 480,
+    "x": 260,
+}
+PLATFORM_LABELS = {
+    "threads": "Threads",
+    "x": "X（旧Twitter）",
+}
+
 _RESULT_PATTERN = re.compile(r"<result>(.*?)</result>", re.DOTALL)
 
 
@@ -54,7 +63,10 @@ def load_reference_notes(reference_dir: Path) -> str:
     return "\n\n".join(chunks)
 
 
-def build_prompt(juken_config: dict, reference_notes: str, today: datetime) -> str:
+def build_prompt(platform: str, juken_config: dict, reference_notes: str, today: datetime) -> str:
+    max_chars = PLATFORM_MAX_CHARS[platform]
+    platform_label = PLATFORM_LABELS[platform]
+
     posts_per_run = juken_config.get("posts_per_run", 3)
     audience = juken_config.get("audience", "")
     tone = juken_config.get("tone", "")
@@ -71,19 +83,28 @@ def build_prompt(juken_config: dict, reference_notes: str, today: datetime) -> s
         if reference_notes
         else ""
     )
+    cross_platform_note = (
+        "\n注意: 上記の参考情報は主に別プラットフォーム(Threads等)での実績データです。"
+        "保護者がどんな悩み・言葉に反応しやすいかという関心の強さの参考にはなりますが、"
+        f"{platform_label}での実績ではありません。文面は他プラットフォームの投稿を流用・要約せず、"
+        f"{platform_label}の文化・文字数に合わせて毎回新規で考えてください。"
+        if reference_notes
+        else ""
+    )
 
     return f"""あなたは「{topic_area}」領域に詳しいSNS運用担当者です。
 Web検索を使って、直近の{topic_area}に関するトレンドや話題(ニュース、SNSでの反応、時期的トピックなど)を調査してください。
 
 本日の日付: {today:%Y-%m-%d}(JST)
 
+投稿先: {platform_label}
 ターゲット層: {audience}
 文体・トーン: {tone}{hashtags_line}
-{reference_block}
-調査結果をもとに、Threads投稿の下書きを{posts_per_run}件作成してください。各下書きについて次の項目を用意してください。
+{reference_block}{cross_platform_note}
+調査結果をもとに、{platform_label}投稿の下書きを{posts_per_run}件作成してください。各下書きについて次の項目を用意してください。
 - topic: 調査で見つけた具体的なトピック
 - insight: そのトピックが今なぜ話題/重要なのか、ターゲット層のどんな関心・不安に刺さるかというインサイト
-- post_text: Threads投稿文({THREADS_MAX_CHARS}文字以内。誇張や不確かな断定は避け、事実は調査結果に基づくこと。絵文字は0〜2個まで)
+- post_text: {platform_label}投稿文({max_chars}文字以内。誇張や不確かな断定は避け、事実は調査結果に基づくこと。絵文字は0〜2個まで)
 - suggested_datetime: 投稿に適した日時(ISO8601形式、JST、本日から2週間以内)
 - reasoning: その日時を提案する理由
 - sources: 参照した情報源のURL(配列)
@@ -130,15 +151,18 @@ def call_claude_research(config: Config, prompt: str) -> str:
 
 
 def research_and_draft(
-    config: Config, juken_config_path: Path, reference_dir: Path
+    config: Config, platform: str, juken_config_path: Path, reference_dir: Path
 ) -> tuple[list[DraftPost], str]:
+    if platform not in PLATFORM_MAX_CHARS:
+        raise ValueError(f"未対応のプラットフォームです: {platform}")
     if not config.anthropic_api_key:
         raise RuntimeError("ANTHROPIC_API_KEY が設定されていません")
 
+    max_chars = PLATFORM_MAX_CHARS[platform]
     juken_config = load_juken_config(juken_config_path)
     reference_notes = load_reference_notes(reference_dir)
     today = datetime.now(JST)
-    prompt = build_prompt(juken_config, reference_notes, today)
+    prompt = build_prompt(platform, juken_config, reference_notes, today)
 
     full_text = call_claude_research(config, prompt)
     raw_items = extract_json(full_text)
@@ -147,7 +171,7 @@ def research_and_draft(
         DraftPost(
             topic=item.get("topic", ""),
             insight=item.get("insight", ""),
-            post_text=item.get("post_text", "")[:THREADS_MAX_CHARS],
+            post_text=item.get("post_text", "")[:max_chars],
             suggested_datetime=item.get("suggested_datetime", ""),
             reasoning=item.get("reasoning", ""),
             sources=item.get("sources", []),
@@ -157,11 +181,12 @@ def research_and_draft(
     return drafts, full_text
 
 
-def render_markdown(drafts: list[DraftPost], generated_at: datetime) -> str:
+def render_markdown(platform: str, drafts: list[DraftPost], generated_at: datetime) -> str:
+    platform_label = PLATFORM_LABELS[platform]
     lines = [
-        f"# Threads下書き案 ({generated_at:%Y-%m-%d %H:%M} JST生成)",
+        f"# {platform_label}下書き案 ({generated_at:%Y-%m-%d %H:%M} JST生成)",
         "",
-        "> 自動生成された下書きです。内容を確認・修正のうえ、手動でThreadsに投稿してください。",
+        "> 自動生成された下書きです。内容を確認・修正のうえ、手動で投稿してください。",
         "",
     ]
     for i, draft in enumerate(drafts, start=1):

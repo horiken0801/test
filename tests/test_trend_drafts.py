@@ -6,9 +6,11 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from socialbot.threads_trend_drafts import (
+from socialbot.trend_drafts import (
     DraftParseError,
     DraftPost,
+    PLATFORM_MAX_CHARS,
+    build_prompt,
     extract_json,
     load_reference_notes,
     render_markdown,
@@ -48,7 +50,8 @@ def test_load_reference_notes_returns_empty_when_dir_missing(tmp_path: Path) -> 
     assert load_reference_notes(tmp_path / "does-not-exist") == ""
 
 
-def test_render_markdown_includes_draft_fields() -> None:
+@pytest.mark.parametrize("platform", ["threads", "x"])
+def test_render_markdown_includes_draft_fields(platform: str) -> None:
     draft = DraftPost(
         topic="模試シーズン",
         insight="秋の模試が本格化する時期",
@@ -58,9 +61,38 @@ def test_render_markdown_includes_draft_fields() -> None:
         sources=["https://example.com"],
     )
 
-    markdown = render_markdown([draft], datetime(2026, 8, 14, 9, 0, tzinfo=JST))
+    markdown = render_markdown(platform, [draft], datetime(2026, 8, 14, 9, 0, tzinfo=JST))
 
     assert "模試シーズン" in markdown
     assert "本文サンプル" in markdown
     assert "https://example.com" in markdown
     assert "2026-08-20T12:30:00+09:00" in markdown
+
+
+def test_build_prompt_uses_platform_specific_char_limit() -> None:
+    juken_config = {
+        "topic_area": "中学受験",
+        "audience": "保護者",
+        "tone": "テストトーン",
+        "hashtags": [],
+        "posts_per_run": 2,
+    }
+    today = datetime(2026, 8, 14, 9, 0, tzinfo=JST)
+
+    x_prompt = build_prompt("x", juken_config, "", today)
+    threads_prompt = build_prompt("threads", juken_config, "", today)
+
+    assert f"{PLATFORM_MAX_CHARS['x']}文字以内" in x_prompt
+    assert f"{PLATFORM_MAX_CHARS['threads']}文字以内" in threads_prompt
+    assert "X（旧Twitter）" in x_prompt
+    assert "Threads" in threads_prompt
+
+
+def test_build_prompt_notes_cross_platform_reference_data() -> None:
+    juken_config = {"topic_area": "中学受験", "audience": "保護者", "tone": "", "posts_per_run": 1}
+    today = datetime(2026, 8, 14, 9, 0, tzinfo=JST)
+
+    prompt = build_prompt("x", juken_config, "過去のThreads投稿メモ", today)
+
+    assert "他プラットフォーム" in prompt
+    assert "過去のThreads投稿メモ" in prompt

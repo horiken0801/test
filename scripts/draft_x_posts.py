@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Research current 中学受験 trends via web search and draft Threads posts for manual review."""
+"""Research current 中学受験 trends via web search and draft X posts for manual review."""
 from __future__ import annotations
 
 import json
@@ -12,10 +12,10 @@ from socialbot.trend_drafts import DraftParseError, render_markdown, research_an
 
 JST = ZoneInfo("Asia/Tokyo")
 
-PLATFORM = "threads"
-JUKEN_CONFIG_PATH = REPO_ROOT / "data" / "threads_juken_config.json"
+PLATFORM = "x"
+JUKEN_CONFIG_PATH = REPO_ROOT / "data" / "x_juken_config.json"
 REFERENCE_DIR = REPO_ROOT / "data" / "reference"
-DRAFTS_DIR = REPO_ROOT / "drafts" / "threads"
+DRAFTS_DIR = REPO_ROOT / "drafts" / "x"
 
 
 def main() -> None:
