@@ -1,128 +1,118 @@
 # X / Threads 自動運用ボット
 
-X（旧Twitter）とThreadsをそれぞれ自動運用するためのツールキットです。GitHub Actionsの定期実行で、次の3つのサイクルを回します。
+X（旧Twitter）とThreadsの運用を支援するツールキットです。現在は **Threads向けの軽量版（中学受験トレンド分析＋下書き生成）** を運用中で、X連携・自動投稿を含むフル自動運用の仕組みは一旦保留しています（後述）。
 
-1. **コンテンツ自動生成**（週次）: 戦略ファイル（`data/strategy.json`）のトピック・トーンに沿って投稿文をAIで生成し、`content_queue/queue.json` に予約投稿として積む
-2. **予約投稿・自動投稿**（毎時）: キューの中で投稿時刻が来たものをX / Threadsそれぞれに自動投稿する
-3. **インサイト分析**（週次）: 直近の投稿の反応（いいね・返信・リポスト等）を取得し、傾向から仮説を立てて `data/strategy.json` にフィードバックする（例: エンゲージメントが高い時間帯を投稿枠に追加）
+## 今すぐ使える機能: Threadsトレンド下書き生成（中学受験）
 
-3が1にフィードバックすることで、運用を続けるほど戦略ファイルが実績に基づいて更新されていきます。
+「中学受験」に関する直近のトレンド・話題をWeb検索で調査し、インサイトを添えたThreads投稿文と推奨投稿日時の下書きを自動生成します。**自動投稿はせず、下書き出力までを行い、投稿は手動**で行う想定です。
+
+- 実行スクリプト: `scripts/draft_threads_posts.py`
+- 定期実行ワークフロー: `.github/workflows/threads-trend-drafts.yml`（毎週火・金 07:00 JST + 手動実行）
+- 出力先: `drafts/threads/YYYY-MM-DD_HHMM.md`（レビュー用）と同名の `.json`（構造化データ）
+- 設定ファイル: `data/threads_juken_config.json`（トーン・ターゲット層・生成件数・ハッシュタグ）
+- 参考データ: `data/reference/` に `.md` / `.txt` を置くと、生成時に追加コンテキストとして読み込まれます（過去投稿の反応メモ、自社サイト情報など）
+
+### 必要なもの
+
+- `ANTHROPIC_API_KEY`（Claude API。Web検索ツールを使ってトレンド調査を行うために必須）
+- Threads APIキーは **不要**（下書き生成のみのため）
+
+GitHub Secretsに `ANTHROPIC_API_KEY` を登録すれば、`threads-trend-drafts.yml` のスケジュール実行または手動実行（Actionsタブ > workflow_dispatch）で下書きが `drafts/threads/` にコミットされます。生成された `.md` を確認し、内容に問題なければ手動でThreadsに投稿してください。
+
+### ローカルでの動作確認
+
+```bash
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
+export ANTHROPIC_API_KEY=sk-ant-...
+
+python scripts/draft_threads_posts.py
+# drafts/threads/ に .md と .json が生成される
+
+pytest  # ネットワーク接続不要のユニットテスト
+```
+
+### 項目の分け方について
+
+調査（トレンド分析）と文面生成は1回のAPI呼び出しの中でまとめて行っています。出力（Markdown/JSON）の中で候補トピックごとに項目を分けているので、パイプライン自体を分割しなくてもレビューはしやすい構成です。将来Xにも展開する場合は、`socialbot/threads_trend_drafts.py` と同様のモジュールをプラットフォームごとに追加する想定です。
+
+---
+
+## 保留中: フル自動運用（X / Threads 自動投稿・実績分析）
+
+以前に構築した、X・Threads両方への自動投稿＋実績に基づく戦略自動更新の仕組みも残しています。現時点では「ライトに始めたい」という方針のため、該当ワークフローの `schedule` トリガーはコメントアウトして停止していますが、`workflow_dispatch` による手動実行や、必要になった際の再開は可能です。
+
+1. **コンテンツ自動生成**: 戦略ファイル（`data/strategy.json`）のトピック・トーンに沿って投稿文をAIで生成し、`content_queue/queue.json` に予約投稿として積む
+2. **予約投稿・自動投稿**: キューの中で投稿時刻が来たものをX / Threadsそれぞれに自動投稿する
+3. **インサイト分析**: 直近の投稿の反応（いいね・返信・リポスト等）をX/Threads APIから取得し、傾向から仮説を立てて `data/strategy.json` にフィードバックする
+
+再開する場合は `.github/workflows/generate-content.yml` / `publish-posts.yml` / `analyze-insights.yml` 内の `schedule:` のコメントを外し、X/Threads両方のAPIキーをGitHub Secretsに設定してください（詳細は下記「APIキーの取得」参照）。
 
 ## 構成
 
 ```
-socialbot/                 # コアロジック（Pythonパッケージ）
-  config.py                 # 環境変数・パス設定
-  queue.py                  # 投稿キューの読み書き
-  strategy.py                # 戦略ファイル（トーン/トピック/投稿時間/仮説）の読み書き
-  content_generator.py       # 投稿文の自動生成（Claude API、未設定時はテンプレート）
-  insights_analyzer.py       # 投稿実績の分析と戦略ファイルへの反映
+socialbot/
+  config.py                    # 環境変数・パス設定
+  threads_trend_drafts.py       # [軽量版] トレンド調査＋下書き生成ロジック
+  queue.py                      # [保留中] 投稿キューの読み書き
+  strategy.py                   # [保留中] 戦略ファイルの読み書き
+  content_generator.py          # [保留中] 投稿文の自動生成
+  insights_analyzer.py          # [保留中] 投稿実績の分析と戦略ファイルへの反映
   platforms/
-    x.py                     # X API v2 クライアント（投稿・自分の投稿の指標取得）
-    threads.py                # Threads API クライアント（投稿・インサイト取得）
+    x.py                        # [保留中] X API v2 クライアント
+    threads.py                  # [保留中] Threads API クライアント（自動投稿用）
 scripts/
-  generate_content.py        # コンテンツ生成CLI
-  publish_posts.py           # 予約投稿の実行CLI
-  analyze_insights.py        # インサイト分析CLI
+  draft_threads_posts.py        # [軽量版] Threads下書き生成CLI
+  generate_content.py           # [保留中] コンテンツ生成CLI
+  publish_posts.py              # [保留中] 予約投稿の実行CLI
+  analyze_insights.py           # [保留中] インサイト分析CLI
 data/
-  strategy.json               # 現在の運用戦略（AIによる自動更新対象）
-  insights_history/           # 分析結果のスナップショット（実行ごとに1ファイル）
+  threads_juken_config.json     # [軽量版] トーン・ターゲット層等の設定
+  reference/                    # [軽量版] ユーザー提供の参考データ置き場
+  strategy.json                 # [保留中] 運用戦略
+  insights_history/             # [保留中] 分析結果のスナップショット
 content_queue/
-  queue.json                  # 投稿キュー（pending/posted/failed/skipped）
-.github/workflows/            # GitHub Actions定期実行の定義
-tests/                        # pytestによるユニットテスト（ネットワーク非依存）
+  queue.json                    # [保留中] 投稿キュー
+drafts/threads/                 # [軽量版] 生成された下書き（.md / .json）
+.github/workflows/               # GitHub Actions定期実行の定義
+tests/                           # pytestによるユニットテスト（ネットワーク非依存）
 ```
 
-## 事前準備: APIキーの取得
+## APIキーの取得
 
-まだAPIキーを取得していない場合、以下が必要です。
+### Claude API（軽量版で必須）
 
-### X (Twitter) API
+https://console.anthropic.com/ でAPIキーを発行し、`ANTHROPIC_API_KEY` として登録してください。
+
+### X (Twitter) API（保留中の機能を使う場合のみ）
 
 1. https://developer.x.com/en/portal/dashboard で開発者アカウントを作成し、アプリを作成
 2. アプリの権限を **Read and Write** に設定（投稿するため）
 3. 「Keys and tokens」から以下を発行
    - API Key / API Key Secret（Consumer Key/Secret）
    - Access Token / Access Token Secret（アプリの権限をRead and Writeにしてから発行すること）
-4. 投稿頻度によっては有料プラン（Basic以上）が必要な場合があります。無料枠の投稿数上限を確認してください。
+4. 投稿頻度によっては有料プラン（Basic以上）が必要な場合があります
 
-### Threads API
+### Threads API（保留中の機能を使う場合のみ）
 
 1. https://developers.facebook.com/ でMetaアプリを作成し、「Threads API」プロダクトを追加
 2. 対象のThreadsアカウントを認可し、`threads_basic` `threads_content_publish` `threads_manage_insights` のスコープでアクセストークンを取得
 3. 短期トークンを長期トークン（約60日）に交換し、`THREADS_ACCESS_TOKEN` に設定
 4. トークンに紐づく `threads_user_id` を取得して `THREADS_USER_ID` に設定
-5. 長期トークンは60日で失効するため、定期的な更新運用（手動 or 別途リフレッシュ処理）が必要です
-
-### コンテンツ自動生成（任意）
-
-`ANTHROPIC_API_KEY` を設定するとClaudeが投稿文を生成します。未設定の場合は簡易テンプレートで代替されるため、まずはキー無しで動作確認できます。
+5. 長期トークンは60日で失効するため、定期的な更新運用が必要です
 
 ## GitHub Secretsの設定
 
-リポジトリの Settings > Secrets and variables > Actions で以下を登録してください。
+| Secret名 | 用途 | 現時点で必要か |
+| --- | --- | --- |
+| `ANTHROPIC_API_KEY` | Threads下書き生成（Web検索によるトレンド調査） | ✅ 必須 |
+| `X_API_KEY` / `X_API_SECRET` / `X_ACCESS_TOKEN` / `X_ACCESS_TOKEN_SECRET` | X自動投稿・指標取得（保留中） | 不要 |
+| `THREADS_ACCESS_TOKEN` / `THREADS_USER_ID` | Threads自動投稿・インサイト取得（保留中） | 不要 |
 
-| Secret名 | 用途 |
-| --- | --- |
-| `X_API_KEY` / `X_API_SECRET` / `X_ACCESS_TOKEN` / `X_ACCESS_TOKEN_SECRET` | X投稿・指標取得 |
-| `THREADS_ACCESS_TOKEN` / `THREADS_USER_ID` | Threads投稿・インサイト取得 |
-| `ANTHROPIC_API_KEY` | コンテンツ自動生成（任意） |
-
-`ANTHROPIC_MODEL` はSecretではなくVariables（Settings > Secrets and variables > Actions > Variables）に設定すると `generate-content.yml` から参照されます。未設定時は `claude-sonnet-5` を使用します。
-
-## ワークフロー
-
-すべて `workflow_dispatch` で手動実行も可能です（Actionsタブから実行）。スケジュールは各YAMLの `cron` を編集して調整してください（UTC指定）。
-
-- `.github/workflows/generate-content.yml`: 毎週日曜21:00 JSTにX/Threads向けドラフトを生成し、`content_queue/queue.json` にコミット
-- `.github/workflows/publish-posts.yml`: 毎時、投稿時刻が来たキュー項目を投稿し、ステータスをコミット
-- `.github/workflows/analyze-insights.yml`: 毎週月曜22:00 JSTに実績を分析し、`data/strategy.json` を更新
-- `.github/workflows/tests.yml`: push/PR時にpytestを実行
-
-いずれもリポジトリへの書き込み用に `permissions: contents: write` と `GITHUB_TOKEN`（デフォルトで利用可能）を使い、生成物をボットコミットとしてpushします。
-
-## コンテンツキューの運用
-
-`content_queue/queue.json` は直接編集して手動で投稿を追加・削除・スケジュール変更しても構いません。各項目のスキーマ:
-
-```json
-{
-  "id": "一意なID（自動採番）",
-  "platform": "x または threads",
-  "text": "投稿本文",
-  "topic": "紐づくトピック名",
-  "scheduled_time": "ISO8601（JST推奨）",
-  "status": "pending | posted | failed | skipped",
-  "post_id": "投稿後に設定されるプラットフォーム側ID",
-  "error": "失敗時のエラーメッセージ"
-}
-```
-
-投稿前に内容を確認したい場合は、`generate-content.yml` の実行後・`publish-posts.yml` が拾う前にPRやコミットでレビュー・修正してください。
-
-## ローカルでの動作確認
-
-```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"
-cp .env.example .env  # 値を埋める（未設定でもテンプレート生成やテストは動く）
-
-# ドラフト生成（.envにANTHROPIC_API_KEYがあればClaudeで生成、無ければテンプレート）
-python scripts/generate_content.py --platform both --count 2
-
-# 投稿時刻が来たものを投稿（X/Threadsの認証情報が必要）
-python scripts/publish_posts.py
-
-# 実績分析と戦略ファイルの更新（X/Threadsの認証情報が必要）
-python scripts/analyze_insights.py
-
-# ユニットテスト（ネットワーク接続不要）
-pytest
-```
+`ANTHROPIC_MODEL` はSecretではなくVariablesに設定すると各ワークフローから参照されます。未設定時は `claude-sonnet-5` を使用します。
 
 ## 注意事項
 
-- 各プラットフォームの自動化・スパム防止ポリシーを順守してください。特に投稿頻度・同一内容の連投・大量フォロー等は規約違反になり得ます
-- 投稿前レビューを挟みたい場合は `publish-posts.yml` の実行前にキューをPRでレビューするフローに変更することを推奨します
-- Threadsの長期アクセストークンは約60日で失効します。失効前に更新する運用を別途用意してください
-- `insights_analyzer.py` の傾向分析はエンゲージメント（いいね+返信+リポスト）の時間帯別平均という単純なヒューリスティックです。運用データが増えてきたらロジックの高度化を検討してください
+- 各プラットフォームの自動化・スパム防止ポリシーを順守してください
+- Threadsの長期アクセストークンは約60日で失効します（保留中機能を使う場合）
+- `data/reference/` に置いた参考データはリポジトリにコミットされるため、機密情報は含めないでください
