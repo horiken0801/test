@@ -14,7 +14,7 @@ JST = ZoneInfo("Asia/Tokyo")
 
 PLATFORM = "threads"
 JUKEN_CONFIG_PATH = REPO_ROOT / "data" / "threads_juken_config.json"
-REFERENCE_DIR = REPO_ROOT / "data" / "reference"
+REFERENCE_DIRS = [REPO_ROOT / "data" / "reference"]
 DRAFTS_DIR = REPO_ROOT / "drafts" / "threads"
 
 
@@ -25,7 +25,7 @@ def main() -> None:
     DRAFTS_DIR.mkdir(parents=True, exist_ok=True)
 
     try:
-        drafts, _raw_text = research_and_draft(config, PLATFORM, JUKEN_CONFIG_PATH, REFERENCE_DIR)
+        drafts, _raw_text = research_and_draft(config, PLATFORM, JUKEN_CONFIG_PATH, REFERENCE_DIRS)
     except DraftParseError as exc:
         debug_path = DRAFTS_DIR / f"{stem}.raw.txt"
         debug_path.write_text(exc.raw_text, encoding="utf-8")
