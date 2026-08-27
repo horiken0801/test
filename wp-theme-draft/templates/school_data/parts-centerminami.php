@@ -21,6 +21,13 @@ $blog_cat_id = 'XX';
 // 住所（Googleマップ埋め込み用）
 $center_minami_address = '神奈川県横浜市都筑区茅ケ崎中央44-14 SHOKENセンター南ビル202';
 $center_minami_map_query = rawurlencode($center_minami_address);
+
+// 公開準備が整うまでは管理者のみプレビューできるようにする。
+// 公開する際は、この行を false にするか、この判定ブロックごと削除してください。
+$center_minami_preview_only = true;
+$center_minami_preview_allowed = $center_minami_preview_only
+  ? (is_user_logged_in() && current_user_can('manage_options'))
+  : true;
 ?>
 <main>
   <section>
@@ -51,6 +58,22 @@ $center_minami_map_query = rawurlencode($center_minami_address);
           <?php get_sidebar(); ?>
           <div class="main_wrap_ct">
             <div class="detail">
+              <?php if (!$center_minami_preview_allowed) : ?>
+
+              <div id="sec">
+                <div class="school-notice">
+                  <div class="school-notice_item">
+                    <p><b>【センター南校 準備中】</b></p>
+                  </div>
+                </div>
+                <p style="text-align:left">
+                  センター南校のページは現在準備中です。詳細が決まり次第、公開いたします。<br>
+                  校舎に関するお問い合わせは<a href="<?php echo home_url('/inquiry/'); ?>">お問い合わせフォーム</a>よりお気軽にご連絡ください。
+                </p>
+              </div>
+
+              <?php else : ?>
+
               <?php echo do_shortcode('[sc name="banner_school"][/sc]'); ?>
 
               <div id="sec">
@@ -277,6 +300,8 @@ $center_minami_map_query = rawurlencode($center_minami_address);
                 </p>
                 <!-- TODO: 駅名・住所・学校名からの通塾エリア情報が決まり次第、久我山校の d_area_bl ブロックを参考に追記してください -->
               </div>
+
+              <?php endif; ?>
             </div>
             <?php get_template_part('renew/templates/templates', 'box') ?>
           </div>
