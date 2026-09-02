@@ -64,5 +64,27 @@
     "category": "相談・DM化(学習リズム)",
     "expected_engagement": "imp 20〜30",
     "destination_url": ""
+  },
+  {
+    "topic": "HP誘導(/about/・2回目データ収集)",
+    "insight": "火12:30の主力枠。/about/は8/25に1回のみ試しており(imp30・エンゲージメント率6.7%)、判断にはサンプルが足りないため2回目を投入。文面は8/25と別の切り口で新規に書き直した。",
+    "post_text": "塾を比べるとき、料金や合格実績だけでは、\n実際の指導スタイルまでは分かりません。\n\nテスティーがどんな考え方で指導しているか、\nまとめているページがあります。\n\n▼こちら\nhttps://testea.net/about/",
+    "suggested_datetime": "2026-09-08T12:30:00+09:00",
+    "reasoning": "/about/の2回目データ収集。火12:30という強い枠で再検証する。",
+    "sources": [],
+    "category": "HP誘導",
+    "expected_engagement": "imp 25〜35",
+    "destination_url": "https://testea.net/about/"
+  },
+  {
+    "topic": "相談・DM化(算数・2学期版)",
+    "insight": "Threadsで対比構造の算数投稿が倍増した実績を踏まえ、X向けにも2学期の算数を再投入。8/31の算数投稿とは別角度(今回は季節性を追加)。",
+    "post_text": "2学期に入って、算数が伸びる子と、\n夏休みのままの子がいます。\n\n違いは、量ではなく、\n夏休みにできなかった問題をやり直したかどうかです。\n\n新しい単元に進む前に、\n1つだけ復習する時間を作ってみてください。\n\n算数、2学期はどう進めていますか。",
+    "suggested_datetime": "2026-09-09T21:00:00+09:00",
+    "reasoning": "週の締めとして算数を季節性のある角度で再投入。",
+    "sources": [],
+    "category": "相談・DM化(算数)",
+    "expected_engagement": "imp 20〜30",
+    "destination_url": ""
   }
 ]
