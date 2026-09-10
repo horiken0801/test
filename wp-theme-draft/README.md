@@ -67,22 +67,52 @@ if(is_category(array( 'blog-kg','blog-ne','blog-km','blog-hy','blog-jy', 'blog-w
 endif;
 ```
 
-### 3. 校舎ページ用CSS/JSの読み込み条件を確認する(★デザイン崩れの原因になりやすい箇所)
+### 3. 校舎ページ用CSS/JSの読み込み条件に `centerminami` を追加する(★デザイン崩れの直接原因)
 
-`parts-centerminami.php`のHTML構造自体は久我山校ページの出力と一致していても、**校舎ページ専用のCSS(`renew/school/css/style.css`など)がこの新しいカテゴリーで読み込まれていない**と、要素は表示されるのに横並びレイアウト・サムネイル整形・2カラム化などのスタイルだけが当たらない、という症状になります(教室長メッセージが写真とテキストで横並びにならない/ブログのサムネイルが原寸大で表示される/連絡先が1カラムの箇条書きになる、など)。
+`parts-centerminami.php`のHTML構造自体は久我山校ページの出力と一致していても、校舎ページ専用のCSS/JS(`renew/school/css/style.css` / `renew/school/js/script.js`)を読み込む条件に `centerminami` が含まれていないと、要素は表示されるのに横並びレイアウト・サムネイル整形・2カラム化などのスタイルが一切当たらず、スライダーや「もっと見る」ボタンなどのJS機能も動かない、という症状になります。
 
-`functions.php`(または`wp_enqueue_scripts`フックが定義されている箇所)を開き、手順2の`category.php`の`blog-cm`配列と同様に、校舎スラッグをハードコードした配列があるか確認してください。例えば以下のような記述です。
+実際に `wp-content/themes/testea/function_d.php` を確認したところ、以下の2つの関数の配列に校舎スラッグがハードコードされており、**`centerminami`(および`blog-cm`)が含まれていませんでした**。これがデザイン崩れの直接の原因です。
+
+`function_d.php` を開き、以下の通り修正してください。
 
 ```php
-// 例(実際のコードはこの通りとは限りません)
-if ( is_category( array( 'kugayama', 'nerima', 'komagome', 'hiyoshi', ... ) ) ) {
-    wp_enqueue_style( 'school-style', get_stylesheet_directory_uri() . '/renew/school/css/style.css' );
+// 変更前
+function enqueue_style_d() {
+  if(is_category(array('school','kugayama','nishieifuku','shimotakaido','komagome','hiyoshi','jiyugaoka','waseda','minatomirai','shibaurakonan', 'tamachi','hatsudai','ichigaya', 'online','blog-kg','blog-ne','blog-st','blog-km','blog-hy','blog-jy', 'blog-ws', 'blog-mn')) || in_category(array('blog-kg','blog-ne','blog-st','blog-km','blog-hy','blog-jy', 'blog-ws', 'blog-mn', 'blog-sk','blog-tm', 'blog-ht','blog-ig', 'blog-ol'))) {
+    wp_enqueue_style( 'school-style', get_stylesheet_directory_uri() . '/renew/school/css/style.css');
+  }
 }
+add_action( 'wp_enqueue_scripts', 'enqueue_style_d' );
+
+function enqueue_script_d(){
+  if(is_category(array('school','kugayama','nishieifuku','shimotakaido','komagome','hiyoshi','jiyugaoka','waseda','minatomirai', 'shibaurakonan','tamachi','hatsudai','ichigaya', 'online'))) {
+    wp_enqueue_script('school-js', get_template_directory_uri().'/renew/school/js/script.js', '1.0', 1 );
+  }
+}
+add_action( 'wp_enqueue_scripts', 'enqueue_script_d');
 ```
 
-このような配列が見つかった場合は、`'centerminami'`をその配列に追加してください。同様の配列がテーマ内の他の箇所(JSファイルの読み込み条件、`body_class`のフィルターなど)にもないか、念のため`kugayama`で検索して洗い出すことをおすすめします。
+```php
+// 変更後(centerminami・blog-cm を追加)
+function enqueue_style_d() {
+  if(is_category(array('school','kugayama','nishieifuku','shimotakaido','komagome','hiyoshi','jiyugaoka','waseda','minatomirai','shibaurakonan', 'tamachi','hatsudai','ichigaya', 'online','centerminami','blog-kg','blog-ne','blog-st','blog-km','blog-hy','blog-jy', 'blog-ws', 'blog-mn','blog-cm')) || in_category(array('blog-kg','blog-ne','blog-st','blog-km','blog-hy','blog-jy', 'blog-ws', 'blog-mn', 'blog-sk','blog-tm', 'blog-ht','blog-ig', 'blog-ol','blog-cm'))) {
+    wp_enqueue_style( 'school-style', get_stylesheet_directory_uri() . '/renew/school/css/style.css');
+  }
+}
+add_action( 'wp_enqueue_scripts', 'enqueue_style_d' );
 
-見当たらない場合(校舎ページ用CSSが常に全ページで読み込まれている場合)は、この手順は不要です。その場合はブラウザの開発者ツール(F12)で、実際のページに`renew/school/css/style.css`が読み込まれているか、ネットワークタブで確認してください。
+function enqueue_script_d(){
+  if(is_category(array('school','kugayama','nishieifuku','shimotakaido','komagome','hiyoshi','jiyugaoka','waseda','minatomirai', 'shibaurakonan','tamachi','hatsudai','ichigaya', 'online','centerminami'))) {
+    wp_enqueue_script('school-js', get_template_directory_uri().'/renew/school/js/script.js', '1.0', 1 );
+  }
+}
+add_action( 'wp_enqueue_scripts', 'enqueue_script_d');
+```
+
+- `enqueue_style_d()`: メインの `is_category` 配列に `centerminami` を、CSS側の `is_category` と `in_category` の両方の配列に `blog-cm` を追加(「センター南校ブログ」の記事一覧・個別記事の両方でCSSが当たるようにするため)
+- `enqueue_script_d()`: `is_category` 配列に `centerminami` を追加(この配列にはblogカテゴリーはそもそも含まれていないため`blog-cm`の追加は不要)
+
+修正後、ブラウザのシークレットウィンドウおよびPCログイン中の両方で `/school/centerminami/` を再読み込みし、レイアウトが久我山校と同じように整うか確認してください。念のためWP Rocketのキャッシュも削除してから確認することをおすすめします。
 
 ### 4. `functions.php` のメタ情報上書き処理(任意)
 
