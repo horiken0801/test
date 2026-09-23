@@ -1,0 +1,79 @@
+[
+  {
+    "topic": "相談・DM化(国語の読解・新テーマ)",
+    "insight": "過去問・苦手科目はThreadsでは好調だったがXでは今回反応ゼロだった。テーマの幅を広げる方針は維持しつつ、これまでXで未投入の国語を新テーマとして投入する。",
+    "post_text": "国語の読解問題で、\n最後まで解ききれない子がいます。\n\n読むスピードというより、\nどこを丁寧に読み、\nどこを飛ばしていいかの\n判断がついていないことが多いです。\n\n国語の読解、時間内に終わっていますか。",
+    "suggested_datetime": "2026-09-24T21:00:00+09:00",
+    "reasoning": "木21:00の相談・DM化枠。Xで未投入の国語を新テーマとして投入。",
+    "sources": [],
+    "category": "相談・DM化(国語)",
+    "expected_engagement": "imp 25〜40",
+    "destination_url": ""
+  },
+  {
+    "topic": "HP誘導(/press/・問いかけあり・3回目確認)",
+    "insight": "新規URL(/experiences/・/handashiki/)も「問いかけあり」で一定の反応(エンゲージメント2)を得たが、/press/(過去2回: エンゲージメント率13.8%・14.3%)ほどの絶対値には届かなかった。/press/自体の話題性(メディア掲載実績)が効いている可能性を検証するため、3回目のデータを取る。",
+    "post_text": "塾を選ぶとき、指導方針の説明だけでなく、\nこれまでどんな形で紹介されてきたかも\n気になるところだと思います。\n\nテスティーがメディアで紹介いただいた記事を、\nまとめて掲載しています。\n\n▼こちら\nhttps://testea.net/press/\n\nこうした実績、どのくらい判断材料にされますか。",
+    "suggested_datetime": "2026-09-25T12:30:00+09:00",
+    "reasoning": "金12:30のHP誘導枠。/press/で3回目のデータを取り、URL自体の話題性の寄与を検証する。",
+    "sources": [],
+    "category": "HP誘導",
+    "expected_engagement": "imp 25〜35",
+    "destination_url": "https://testea.net/press/"
+  },
+  {
+    "topic": "休止",
+    "insight": "運用プロンプト2-6「土は原則休止」に従い、通常投稿は作成していない。",
+    "post_text": "",
+    "suggested_datetime": "2026-09-26T00:00:00+09:00",
+    "reasoning": "土曜は原則休止のためスキップ。",
+    "sources": [],
+    "category": "休止",
+    "expected_engagement": "",
+    "destination_url": ""
+  },
+  {
+    "topic": "議論・模試の結果を子どもと一緒に見る家庭と親だけで見る家庭",
+    "insight": "前回(9/20)の議論・模試投稿が新規フォロー1件を獲得した。議論カテゴリは到達だけでなくフォロー獲得にも寄与する可能性があるため、Threads側と同じ新角度をX向けに書き起こして継続する。",
+    "post_text": "模試の結果を、\n子どもと一緒に見る家庭と、\n親だけで先に見ておく家庭があります。\n\n一緒に見る家庭は、\nその場で反応を確認できます。\n\n親だけで先に見る家庭は、\n伝え方を考える時間を持てます。\n\n模試の結果、どちらのやり方で見ていますか。",
+    "suggested_datetime": "2026-09-27T21:00:00+09:00",
+    "reasoning": "日21:00の議論枠。前回フォロー獲得に繋がったカテゴリを新角度で継続。",
+    "sources": [],
+    "category": "議論・テーマ提起",
+    "expected_engagement": "imp 35〜50",
+    "destination_url": ""
+  },
+  {
+    "topic": "相談・DM化(時間配分・新テーマ)",
+    "insight": "Threads側でも投入した時間配分の症状特化テーマをXにも横展開する。",
+    "post_text": "解ける問題のはずなのに、\n時間切れで最後まで解けない子がいます。\n\n実力不足というより、\n最初の方の問題に\n時間をかけすぎているケースが多いです。\n\n時間配分、意識されていますか。",
+    "suggested_datetime": "2026-09-28T07:00:00+09:00",
+    "reasoning": "月7:00の生活導線枠。新テーマ(時間配分)をXにも投入。",
+    "sources": [],
+    "category": "相談・DM化(時間配分)",
+    "expected_engagement": "imp 25〜35",
+    "destination_url": ""
+  },
+  {
+    "topic": "HP誘導(/blog-handa/・問いかけあり・初投入)",
+    "insight": "「問いかけあり」の効果がURLによってどう変わるかを引き続き検証するため、未投入の/blog-handa/(繁田ブログ)でデータを取る。",
+    "post_text": "指導方針を文章でじっくり伝えるのは、\n短い投稿だけでは難しいと感じています。\n\n繁田のブログで、\n日々の指導で感じたことを\n発信しています。\n\n▼こちら\nhttps://testea.net/blog-handa/\n\nこうした発信、参考にされますか。",
+    "suggested_datetime": "2026-09-29T12:30:00+09:00",
+    "reasoning": "火12:30のHP誘導枠。新規URL(/blog-handa/)で「問いかけあり」のデータをさらに積み増す。",
+    "sources": [],
+    "category": "HP誘導",
+    "expected_engagement": "imp 25〜35",
+    "destination_url": "https://testea.net/blog-handa/"
+  },
+  {
+    "topic": "声かけ型(テスト後の見直し習慣についての聞き方)",
+    "insight": "週の締め。Threads側の算数(見直し習慣)投稿と関連させつつ、X向けに声かけの型として書き起こした。",
+    "post_text": "テストの後、\n『見直しした?』と聞くより、\n『どこを一番丁寧に見直した?』\nと聞く方が、具体的な答えが返ってきやすいことがあります。\n\n次のテストから、\n聞き方を変えてみるのもいいかもしれません。",
+    "suggested_datetime": "2026-09-30T21:00:00+09:00",
+    "reasoning": "水21:00の声かけ型枠。週全体を貫く『見直し・振り返り』のテーマと接続して締める。",
+    "sources": [],
+    "category": "声かけ型",
+    "expected_engagement": "imp 25〜35",
+    "destination_url": ""
+  }
+]
