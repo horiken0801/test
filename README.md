@@ -11,6 +11,22 @@ Webサイト、コンテンツ企画、効果測定を横断的に扱うモノ�
 | [`site/`](site/) | LP・コーポレートサイトのコード |
 | [`content/`](content/) | SNS・ブログ・広告のコンテンツ企画とカレンダー |
 | [`analytics/`](analytics/) | 効果測定レポートと集計スクリプト |
+| [`.claude/skills/`](.claude/skills/) | Claude Codeが使うマーケティング特化スキル集 |
+
+## Claude Codeマーケティングスキル
+
+[coreyhaines31/marketingskills](https://github.com/coreyhaines31/marketingskills)(MIT License)のスキル一式を `.claude/skills/` に取り込んでいます。Claude Codeでこのリポジトリを開くと、CRO・コピーライティング・SEO・広告・メール・SNSなど50種類のマーケティングタスク別スキルが自動で使えるようになります。
+
+- 例: 「このLPのCVRを改善したい」→ `cro` スキルが使われる
+- 例: 「ホームページのコピーを書いて」→ `copywriting` スキルが使われる
+- 直接呼び出す場合は `/cro`, `/copywriting`, `/seo-audit` のように使用
+- 各スキルの一覧・詳細は本家の[README](https://github.com/coreyhaines31/marketingskills#available-skills)を参照
+
+### 最初にやること
+
+`product-marketing` スキルを使って `.agents/product-marketing.md` を作成すると、塾の商品概要・ターゲット・強み等の共通コンテキストが他の全スキルから自動参照されます。`docs/brand-guideline.md` `docs/strategy.md` と役割は近いですが、こちらはスキルが直接読み込む正式なコンテキストファイルなので、内容が固まったら反映してください。
+
+最新版への更新は本家リポジトリの `skills/` を再取得し、`.claude/skills/` を上書きしてください。
 
 ## 運用の考え方
 
